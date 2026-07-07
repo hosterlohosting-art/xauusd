@@ -7,10 +7,13 @@ const ROOT = path.resolve(__dirname, '..');
 const DATA_DIR = path.join(__dirname, 'data');
 const DIST_DIR = path.join(ROOT, 'dist');
 const STARTED_AT = new Date().toISOString();
+const TURSO_DATABASE_URL = process.env.TURSO_DATABASE_URL || process.env.DATABASE_URL || '';
+const TURSO_AUTH_TOKEN = process.env.TURSO_AUTH_TOKEN || process.env.DATABASE_AUTH_TOKEN || '';
 const FILES = {
   trades: path.join(DATA_DIR, 'trades.json'),
   predictions: path.join(DATA_DIR, 'predictions.json'),
 };
+let tursoClientPromise = null;
 
 function ensureStore() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -34,6 +37,120 @@ function writeJson(file, value) {
   const next = Array.isArray(value) ? value.slice(0, 1000) : [];
   fs.writeFileSync(file, `${JSON.stringify(next, null, 2)}\n`, 'utf8');
   return next;
+}
+
+async function getTursoClient() {
+  if (!TURSO_DATABASE_URL || !TURSO_AUTH_TOKEN) return null;
+  if (!tursoClientPromise) {
+    tursoClientPromise = (async () => {
+      const { createClient } = await import('@libsql/client');
+      const client = createClient({
+        url: TURSO_DATABASE_URL,
+        authToken: TURSO_AUTH_TOKEN,
+      });
+      await client.execute(`
+        CREATE TABLE IF NOT EXISTS app_records (
+          collection TEXT NOT NULL,
+          id TEXT NOT NULL,
+          data TEXT NOT NULL,
+          updated_at INTEGER NOT NULL,
+          PRIMARY KEY (collection, id)
+        )
+      `);
+      return client;
+    })().catch(error => {
+      tursoClientPromise = null;
+      console.error('Turso unavailable, falling back to local JSON:', error.message);
+      return null;
+    });
+  }
+  return tursoClientPromise;
+}
+
+function normalizeRecords(value) {
+  return Array.isArray(value) ? value.slice(0, 1000).filter(item => item && item.id) : [];
+}
+
+async function readStore(key) {
+  const client = await getTursoClient();
+  if (!client) return readJson(FILES[key]);
+
+  const result = await client.execute({
+    sql: 'SELECT data FROM app_records WHERE collection = ? ORDER BY updated_at DESC LIMIT 1000',
+    args: [key],
+  });
+  return result.rows.map(row => {
+    try {
+      return JSON.parse(row.data);
+    } catch {
+      return null;
+    }
+  }).filter(Boolean);
+}
+
+async function replaceStore(key, value) {
+  const records = normalizeRecords(value);
+  const client = await getTursoClient();
+  if (!client) return writeJson(FILES[key], records);
+
+  const statements = [
+    { sql: 'DELETE FROM app_records WHERE collection = ?', args: [key] },
+    ...records.map(record => ({
+      sql: 'INSERT INTO app_records (collection, id, data, updated_at) VALUES (?, ?, ?, ?)',
+      args: [key, String(record.id), JSON.stringify(record), Date.now()],
+    })),
+  ];
+  await client.batch(statements, 'write');
+  return records;
+}
+
+async function upsertStore(key, value) {
+  if (!value || !value.id) return readStore(key);
+  const client = await getTursoClient();
+  if (!client) {
+    const current = readJson(FILES[key]);
+    const idx = current.findIndex(item => item.id === value.id);
+    if (idx >= 0) current[idx] = { ...current[idx], ...value };
+    else current.unshift(value);
+    return writeJson(FILES[key], current);
+  }
+
+  await client.execute({
+    sql: `
+      INSERT INTO app_records (collection, id, data, updated_at)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(collection, id) DO UPDATE SET
+        data = excluded.data,
+        updated_at = excluded.updated_at
+    `,
+    args: [key, String(value.id), JSON.stringify(value), Date.now()],
+  });
+  return readStore(key);
+}
+
+async function clearStore(key) {
+  const client = await getTursoClient();
+  if (!client) return writeJson(FILES[key], []);
+
+  await client.execute({
+    sql: 'DELETE FROM app_records WHERE collection = ?',
+    args: [key],
+  });
+  return [];
+}
+
+async function storeHealth() {
+  const client = await getTursoClient();
+  if (!client) {
+    return {
+      mode: TURSO_DATABASE_URL && TURSO_AUTH_TOKEN ? 'json-fallback' : 'json',
+      location: DATA_DIR,
+    };
+  }
+  return {
+    mode: 'turso',
+    databaseUrl: TURSO_DATABASE_URL.replace(/\/\/([^@/]+@)?/, '//'),
+  };
 }
 
 function readBody(req) {
@@ -101,29 +218,22 @@ function serveStatic(req, res) {
 }
 
 async function handleCollection(req, res, key) {
-  const file = FILES[key];
   if (req.method === 'GET') {
-    sendJson(res, 200, readJson(file));
+    sendJson(res, 200, await readStore(key));
     return;
   }
   if (req.method === 'PUT') {
     const body = await readBody(req);
-    sendJson(res, 200, writeJson(file, body));
+    sendJson(res, 200, await replaceStore(key, body));
     return;
   }
   if (req.method === 'POST') {
     const body = await readBody(req);
-    const current = readJson(file);
-    if (body && body.id) {
-      const idx = current.findIndex(item => item.id === body.id);
-      if (idx >= 0) current[idx] = { ...current[idx], ...body };
-      else current.unshift(body);
-    }
-    sendJson(res, 200, writeJson(file, current));
+    sendJson(res, 200, await upsertStore(key, body));
     return;
   }
   if (req.method === 'DELETE') {
-    sendJson(res, 200, writeJson(file, []));
+    sendJson(res, 200, await clearStore(key));
     return;
   }
   sendJson(res, 405, { ok: false, error: 'Method not allowed' });
@@ -143,7 +253,7 @@ const server = http.createServer(async (req, res) => {
       sendJson(res, 200, {
         ok: true,
         startedAt: STARTED_AT,
-        store: DATA_DIR,
+        store: await storeHealth(),
       });
       return;
     }
@@ -164,5 +274,7 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Gold dashboard backend running on http://127.0.0.1:${PORT}`);
-  console.log(`Saving trades and predictions in ${DATA_DIR}`);
+  console.log(TURSO_DATABASE_URL && TURSO_AUTH_TOKEN
+    ? `Saving trades and predictions in Turso: ${TURSO_DATABASE_URL}`
+    : `Saving trades and predictions in ${DATA_DIR}`);
 });

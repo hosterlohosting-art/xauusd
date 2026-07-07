@@ -1,73 +1,145 @@
-# React + TypeScript + Vite
+# XAU/USD Signal Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Live XAU/USD signal dashboard with:
 
-Currently, two official plugins are available:
+- Real-time gold price/candle view
+- Multi-strategy buy/sell/hold scoring
+- Prediction percentage and readiness gate
+- Prediction archive with correctness tracking
+- Trade journal with TP/SL outcome tracking
+- Backend persistence through Turso, with local JSON fallback
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Local Development
 
-## React Compiler
+Install dependencies:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Run frontend:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev
 ```
+
+Run backend:
+
+```bash
+npm run backend
+```
+
+Frontend dev URL:
+
+```text
+http://127.0.0.1:3000
+```
+
+Backend URL:
+
+```text
+http://127.0.0.1:8787
+```
+
+## Production / cPanel
+
+Recommended domain:
+
+```text
+https://trade.arabianherbal.com
+```
+
+In cPanel Git Version Control, clone:
+
+```text
+https://github.com/hosterlohosting-art/xauusd.git
+```
+
+Suggested repository path:
+
+```text
+repositories/xauusd
+```
+
+In cPanel Node.js App:
+
+- Application root: the cloned repo folder
+- Startup file: `server/server.cjs`
+- Node version: 20+ recommended
+- Application mode: production
+- Run NPM install
+- Run build command:
+
+```bash
+npm run build
+```
+
+- Start command:
+
+```bash
+npm run backend
+```
+
+The backend serves both:
+
+- API routes: `/api/health`, `/api/trades`, `/api/predictions`
+- Built frontend from `dist`
+
+## Environment Variables
+
+Set these in cPanel Node.js App environment variables. Do not commit real tokens.
+
+```text
+PORT=8787
+TURSO_DATABASE_URL=libsql://your-db.turso.io
+TURSO_AUTH_TOKEN=your-token
+```
+
+For local frontend development only:
+
+```text
+VITE_API_URL=http://127.0.0.1:8787
+```
+
+On production, `VITE_API_URL` can be omitted because the frontend and backend are served from the same domain.
+
+## Data Storage
+
+When Turso env variables exist, predictions and trades are saved in Turso table:
+
+```sql
+app_records(collection, id, data, updated_at)
+```
+
+When Turso env variables are missing or unavailable, the backend falls back to:
+
+```text
+server/data/predictions.json
+server/data/trades.json
+```
+
+The `server/data` folder is intentionally ignored by Git.
+
+## Verification
+
+```bash
+npm run lint
+npm run build
+npm run backend
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8787/api/health
+```
+
+Expected result includes:
+
+```json
+{ "ok": true }
+```
+
+## Trading Disclaimer
+
+This software is for analysis and education. It tracks prediction quality over time, but no trading tool can guarantee profit or perfect accuracy. Always use risk management.
