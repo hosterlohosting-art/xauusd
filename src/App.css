@@ -1,0 +1,277 @@
+/* Custom scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(71, 85, 105, 0.8);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.8);
+}
+
+/* Price flash animations */
+@keyframes flashGreen {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+  50% { box-shadow: 0 0 20px 5px rgba(16, 185, 129, 0.2); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+@keyframes flashRed {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 20px 5px rgba(239, 68, 68, 0.2); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.price-display.flash-green {
+  animation: flashGreen 0.3s ease-out;
+}
+
+.price-display.flash-red {
+  animation: flashRed 0.3s ease-out;
+}
+
+/* Glow effects */
+.glow-green {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+}
+
+.glow-red {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+.glow-amber {
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+}
+
+/* Signal pulse animation */
+@keyframes signalPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+.animate-signal-pulse {
+  animation: signalPulse 2s ease-in-out infinite;
+}
+
+/* Smooth transitions */
+* {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Card hover effects */
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glass morphism effect */
+.glass {
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Neon glow for buy/sell */
+.neon-buy {
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.5), 0 0 20px rgba(16, 185, 129, 0.3);
+}
+
+.neon-sell {
+  text-shadow: 0 0 10px rgba(239, 68, 68, 0.5), 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+/* Loading shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, rgba(30, 41, 59, 0.5) 25%, rgba(51, 65, 85, 0.5) 50%, rgba(30, 41, 59, 0.5) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Entry animation */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slideInUp 0.5s ease-out forwards;
+}
+
+/* Stagger children animation */
+.stagger-children > * {
+  opacity: 0;
+  animation: slideInUp 0.5s ease-out forwards;
+}
+
+.stagger-children > *:nth-child(1) { animation-delay: 0.1s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.2s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.3s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.4s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.5s; }
+
+/* Pulse ring animation */
+@keyframes pulseRing {
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+.pulse-ring::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  border: 2px solid currentColor;
+  animation: pulseRing 2s ease-out infinite;
+}
+
+/* Smooth number transition */
+.number-transition {
+  transition: all 0.3s ease;
+  display: inline-block;
+}
+
+/* Status indicator dot */
+.status-dot {
+  position: relative;
+}
+
+.status-dot::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: inherit;
+  opacity: 0.4;
+  animation: pulseRing 2s ease-out infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Canvas chart container */
+.tv-lightweight-charts {
+  border-radius: 0 0 1rem 1rem !important;
+}
+
+/* Light theme overrides for the existing dark Tailwind dashboard */
+.gold-app.light {
+  background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 48%, #f8fafc 100%) !important;
+  color: #0f172a !important;
+}
+
+.gold-app.light [class*="from-slate-950"],
+.gold-app.light [class*="via-slate-900"],
+.gold-app.light [class*="to-slate-950"],
+.gold-app.light [class*="from-slate-900"],
+.gold-app.light [class*="via-slate-800"],
+.gold-app.light [class*="to-slate-900"] {
+  --tw-gradient-from: #ffffff var(--tw-gradient-from-position) !important;
+  --tw-gradient-via: #f8fafc var(--tw-gradient-via-position) !important;
+  --tw-gradient-to: #eef2ff var(--tw-gradient-to-position) !important;
+}
+
+.gold-app.light [class*="bg-slate-950"],
+.gold-app.light [class*="bg-slate-900"],
+.gold-app.light [class*="bg-slate-800"],
+.gold-app.light [class*="bg-slate-700"] {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.gold-app.light [class*="bg-slate-900/"],
+.gold-app.light [class*="bg-slate-800/"],
+.gold-app.light [class*="bg-slate-700/"] {
+  background-color: rgba(255, 255, 255, 0.82) !important;
+}
+
+.gold-app.light .glass {
+  background: rgba(255, 255, 255, 0.78) !important;
+  border-color: rgba(148, 163, 184, 0.35) !important;
+}
+
+.gold-app.light [class*="border-slate-800"],
+.gold-app.light [class*="border-slate-700"],
+.gold-app.light [class*="border-slate-600"] {
+  border-color: rgba(148, 163, 184, 0.45) !important;
+}
+
+.gold-app.light [class*="text-white"],
+.gold-app.light [class*="text-slate-100"],
+.gold-app.light [class*="text-slate-200"],
+.gold-app.light [class*="text-slate-300"] {
+  color: #0f172a !important;
+}
+
+.gold-app.light [class*="text-slate-400"],
+.gold-app.light [class*="text-slate-500"],
+.gold-app.light [class*="text-slate-600"] {
+  color: #475569 !important;
+}
+
+.gold-app.light input,
+.gold-app.light textarea,
+.gold-app.light select {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(148, 163, 184, 0.55) !important;
+  color: #0f172a !important;
+}
+
+.gold-app.light input::placeholder {
+  color: #64748b !important;
+}
+
+.gold-app.light .custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(226, 232, 240, 0.8);
+}
+
+.gold-app.light .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.9);
+}
+
+.gold-app.light .shimmer {
+  background: linear-gradient(90deg, rgba(226, 232, 240, 0.7) 25%, rgba(241, 245, 249, 0.95) 50%, rgba(226, 232, 240, 0.7) 75%);
+  background-size: 200% 100%;
+}
