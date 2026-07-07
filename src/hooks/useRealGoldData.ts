@@ -13,7 +13,6 @@ const toPrice = (value: unknown): number | null => {
   return Number.isFinite(price) && price > 0 ? price : null;
 };
 const toMinute = (time: number) => Math.floor(time / 60) * 60;
-const roundPrice = (price: number) => Math.round(price * 100) / 100;
 
 function mergeCandlesByTime(candles: CandleData[]): CandleData[] {
   const byTime = new Map<number, CandleData>();
@@ -344,12 +343,7 @@ export const useRealGoldData = () => {
       const price = await fetchPrice();
       const anchorPrice = price || realPrice || lastTickPriceRef.current;
       if (!anchorPrice) return;
-      const previousTick = lastTickPriceRef.current || anchorPrice;
-      const unchangedFeed = Math.abs(anchorPrice - previousTick) < 0.005;
-      const tickNoise = unchangedFeed
-        ? (Math.sin(Date.now() / 7000) * 0.18) + ((Math.random() - 0.5) * 0.16)
-        : 0;
-      const currentPrice = roundPrice(anchorPrice + tickNoise);
+      const currentPrice = anchorPrice;
       lastTickPriceRef.current = currentPrice;
       if (!currentPrice || !currentMinuteCandleRef.current) return;
       
