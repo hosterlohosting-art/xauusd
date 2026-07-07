@@ -182,7 +182,49 @@ function sendJson(res, status, value) {
     'Access-Control-Allow-Headers': 'Content-Type',
     'Cache-Control': 'no-store',
   });
-  res.end(JSON.stringify(value));
+  res.end(`${JSON.stringify(value, null, 2)}\n`);
+}
+
+function sendHtml(res, status, html) {
+  res.writeHead(status, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Cache-Control': 'no-store',
+  });
+  res.end(html);
+}
+
+function serveApiIndex(res) {
+  sendHtml(res, 200, `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gold Signals API</title>
+    <style>
+      body { margin: 0; font-family: Arial, sans-serif; background: #0f172a; color: #e2e8f0; }
+      main { max-width: 860px; margin: 0 auto; padding: 48px 20px; }
+      h1 { margin: 0 0 8px; font-size: 32px; }
+      p { color: #94a3b8; line-height: 1.6; }
+      a { color: #fbbf24; text-decoration: none; font-weight: 700; }
+      a:hover { text-decoration: underline; }
+      .grid { display: grid; gap: 14px; margin-top: 28px; }
+      .card { border: 1px solid rgba(148, 163, 184, .25); border-radius: 8px; padding: 18px; background: rgba(15, 23, 42, .8); }
+      code { color: #67e8f9; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Gold Signals API</h1>
+      <p>Backend is running. JSON endpoints are now pretty-printed so they are easier to read in the browser.</p>
+      <div class="grid">
+        <div class="card"><a href="/api/health">/api/health</a><p>Backend status and storage mode.</p></div>
+        <div class="card"><a href="/api/predictions">/api/predictions</a><p>Saved prediction archive from Turso.</p></div>
+        <div class="card"><a href="/api/trades">/api/trades</a><p>Saved trade journal records.</p></div>
+        <div class="card"><a href="/">Dashboard</a><p>Main XAU/USD signal dashboard.</p></div>
+      </div>
+    </main>
+  </body>
+</html>`);
 }
 
 function serveStatic(req, res) {
@@ -249,6 +291,10 @@ const server = http.createServer(async (req, res) => {
     }
 
     const url = new URL(req.url, `http://${req.headers.host}`);
+    if (url.pathname === '/api') {
+      serveApiIndex(res);
+      return;
+    }
     if (url.pathname === '/api/health') {
       sendJson(res, 200, {
         ok: true,
