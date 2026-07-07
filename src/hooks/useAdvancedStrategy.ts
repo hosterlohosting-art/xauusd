@@ -517,10 +517,10 @@ function buildReadiness(
   if (directionalScores.length >= 4) confirmations.push(`${directionalScores.length}/6 strategy groups aligned`);
   else blockers.push(`Only ${directionalScores.length}/6 strategy groups aligned`);
 
-  if (prediction.probability >= 72) confirmations.push(`Prediction probability ${prediction.probability}%`);
-  else blockers.push(`Prediction below elite threshold (${prediction.probability}%)`);
+  if (prediction.probability >= 62) confirmations.push(`Prediction probability ${prediction.probability}%`);
+  else blockers.push(`Prediction below active threshold (${prediction.probability}%)`);
 
-  if (prediction.modelEdge >= 35) confirmations.push(`Model edge ${prediction.modelEdge}%`);
+  if (prediction.modelEdge >= 18) confirmations.push(`Model edge ${prediction.modelEdge}%`);
   else blockers.push(`Weak model edge (${prediction.modelEdge}%)`);
 
   if (prediction.backtestWinRate !== null && prediction.backtestTrades >= 40 && prediction.backtestWinRate >= 56) {
@@ -550,7 +550,7 @@ function buildReadiness(
   else blockers.push(`Data quality below professional threshold (${dataQualityScore}%)`);
 
   if (dataQuality && !dataQuality.isRealOhlc) {
-    blockers.push('Broker-grade OHLC feed not connected');
+    blockers.push('OHLC is reconstructed from live spot ticks');
   }
 
   if (session.score >= 10) confirmations.push(`${session.label} session`);
@@ -565,12 +565,11 @@ function buildReadiness(
     session.score * 0.10
   );
   const criticalBlockers = blockers.filter(b =>
-    b.includes('Broker-grade') ||
     b.includes('No directional') ||
     b.includes('Data quality') ||
-    b.includes('Prediction below')
+    b.includes('Prediction below active')
   ).length;
-  const allowTrade = signalType !== 'HOLD' && readinessScore >= 72 && criticalBlockers === 0 && blockers.length <= 2;
+  const allowTrade = signalType !== 'HOLD' && readinessScore >= 68 && criticalBlockers === 0 && blockers.length <= 3;
   const grade = !allowTrade
     ? 'NO TRADE'
     : readinessScore >= 90
@@ -904,10 +903,10 @@ export function useAdvancedStrategy(candles: CandleData[], dataQuality?: DataQua
     let signalType: 'BUY' | 'SELL' | 'HOLD';
     let confidence: number;
     
-    if (normalizedScore >= 65) {
+    if (normalizedScore >= 58) {
       signalType = 'BUY';
       confidence = Math.round(normalizedScore);
-    } else if (normalizedScore <= 35) {
+    } else if (normalizedScore <= 42) {
       signalType = 'SELL';
       confidence = Math.round(100 - normalizedScore);
     } else {
@@ -992,7 +991,7 @@ export function useAdvancedStrategy(candles: CandleData[], dataQuality?: DataQua
     };
     const riskPercent = Math.round((risk / entry) * 10000) / 100;
     const readiness = buildReadiness(signalType, scorePayload, prediction, rr, riskPercent, (atrValue / price) * 100, dataQuality);
-    const finalSignalType = readiness.allowTrade ? signalType : 'HOLD';
+    const finalSignalType = signalType;
     const finalWarnings = readiness.allowTrade
       ? warnings
       : [...readiness.blockers, ...warnings];
